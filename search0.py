@@ -65,7 +65,10 @@ def auto():
     		response = urllib.request.urlretrieve(finalurl, "temp.json")
     	except (URLError,TimeoutError,OSError) as e:
     		print("Connection timeout, please try again later\n")
-    	#TODO process the data,write into ori file then delete the tempfile.
+    	#process the data,write into ori file then delete the tempfile.
+    	data = json.load(open("temp.json"))
+    	resultnum = len(data["results"]) 
+    	#TODO write the result number into CSV ori file
 
     #Subway station part readin and download part here
     locationtype = "Subway station"
@@ -77,7 +80,10 @@ def auto():
     		response = urllib.request.urlretrieve(finalurl, "temp.json")
     	except (URLError,TimeoutError,OSError) as e:
     		print("Connection timeout, please try again later\n")
-    	#TODO process the data,write into ori file then delete the tempfile.
+    	#process the data,write into ori file then delete the tempfile.
+    	data = json.load(open("temp.json"))
+    	resultnum = len(data["results"]) 
+    	#TODO write the result number into CSV ori file
     
 
 
