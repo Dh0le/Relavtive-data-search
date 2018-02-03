@@ -9,9 +9,13 @@ import subprocess
 
 glob_la[]
 glob_lo[]
+result_bus[]
+result_subway[]
 sub_num[]
 bus_num[]
 count
+inputfilename
+outputfilename
 def manual():
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = input("Please enter 'xml' or 'json'\n")
@@ -36,11 +40,21 @@ def takecsvinput()
     global glob_la
     global glob_lo
     global count
-    inputfilename=input("Please enter the filename in .csv format\n")#get the input filename to read
+    global inputfilename
+    global outputfilename
+    global result_subway
+    global result_bus
+    inputfilename=input("Please enter the input filename in .csv format\n")#get the input filename to read
+    outputfilename=input("Please enter the output filename in .csv format\n")#get the output filename to write
+
+
+
     count = len(open(inputfilename,'rU').readlines())#get the line number of  current open filename
     initial_value = 0
     glob_la = [ initial_value for i in range(count)] #inilized the global list before using
     glob_lo = [ initial_value for i in range(count)] 
+    result_bus = [ initial_value for i in range(count)]  #initilized the result list to write
+    result_subway = [ initial_value for i in range(count)] #initilized the reuslt list to write
     with open(inputfilename) as f:
         reader = csv.reader(f)
         for x in range (0,count):
@@ -55,11 +69,14 @@ def auto():
     if int(radius) > 50000:
         print("Wrong input detected\n Exiting program\n")
         exit(1)
+    #change to global varibale mode to ready write-in
+    global glob_lo
+    global glob_la
     #bus part readin and download part here
-    locationtype = "Bus station"
     takecsvinput()
     for i in range count:
-    	location = str(glob_la)+','+str(glob_lo)
+    	locationtype = "Bus station"
+    	location = str(glob_la[i])+','+str(glob_lo[i])
     	finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
     	try:
     		response = urllib.request.urlretrieve(finalurl, "temp.json")
@@ -67,43 +84,57 @@ def auto():
     		print("Connection timeout, please try again later\n")
     	#process the data,write into ori file then delete the tempfile.
     	data = json.load(open("temp.json"))
-    	resultnum = len(data["results"]) 
-    	#TODO write the result number into CSV ori file
+    	bus_result_num = len(data["results"]) 
+    	result_bus[i] = bus_result_num
 
-    #Subway station part readin and download part here
-    locationtype = "Subway station"
-    takecsvinput()
-    for i in range count:
-    	location = str(glob_la)+','+str(glob_lo)
+    	#Subway station part readin and download part here
+    	locationtype = "Subway station"
     	finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
     	try:
     		response = urllib.request.urlretrieve(finalurl, "temp.json")
     	except (URLError,TimeoutError,OSError) as e:
     		print("Connection timeout, please try again later\n")
     	#process the data,write into ori file then delete the tempfile.
-    	data = json.load(open("temp.json"))
-    	resultnum = len(data["results"]) 
-    	#TODO write the result number into CSV ori file
-    
+    	data = json.load(open("temp1.json"))
+    	sub_result_num = len(data["results"]) 
+    	result_subway[i] = sub_result_num
+    	write_out(inputfilename,outputfilename)
+
 
 
 #TODO:This function needs to be modifed to be used.
 def write_out(filename,targenemt):
-    now=datetime.datetime.now()
     with open(filename,'r') as inputf:
-        with open(targenemt,'w') as outputf:
+        with open("csvtemp1.csv",'w') as outputf:
             writer = csv.writer(outputf,lineterminator='\n')
             reader = csv.reader(inputf)
             all = []
             row = next(reader)
             row.append("Bus_station_number")
             all.append(row)
-
+            x = 0
             for row in reader:
-                row.append(now.strftime('%Y-%m-%d %H:%M:%S'))
+                row.append(result_bus[x])
                 all.append(row)
+                x = x+1
+            writer.writerows(all)
+    with open("csvtemp1.csv",'r') as inputf:
+        with open(targenemt,'w') as outputf:
+            writer = csv.writer(outputf,lineterminator='\n')
+            reader = csv.reader(inputf)
+            all = []
+            row = next(reader)
+            row.append("Subway_station_number")
+            all.append(row)
+            x = 0
+            for row in reader:
+                row.append(result_subway[x])
+                all.append(row)
+                x = x+1
             writer.writerows(all)
 
-def main()
+
+def main():
+	#TODO
 
 main()
