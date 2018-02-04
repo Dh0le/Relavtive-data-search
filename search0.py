@@ -135,6 +135,10 @@ def write_out(filename,targenemt):
 
 
 def main():
-	#TODO
+	mode = input("Please enter 1 for auto and 2 for manual\n")
+	if int(mode) == 1:
+		auto()
+	elif int(mode) == 2:
+		manual()
 
 main()
