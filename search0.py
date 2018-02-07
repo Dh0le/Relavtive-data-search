@@ -135,6 +135,8 @@ def write_out(filename,targenemt):
 
 
 def main():
+	testurl = https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8
+	response = urllib.request.urlretrieve(testurl, "temp.json")
 	mode = input("Please enter 1 for auto and 2 for manual\n")
 	if int(mode) == 1:
 		auto()
