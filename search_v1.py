@@ -13,6 +13,7 @@ bus_num = 0
 count = 0
 inputfilename = ''
 outputfilename= ''
+constumkey = ''
 def manual():
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = input("Please enter 'xml' or 'json'\n")
@@ -23,7 +24,7 @@ def manual():
         exit(1)
     locationtype = input("Please enter the type of places you want to search like restaurant\n")
     keyword = input("Please enter the keyword you want to search in places name\n")
-    finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword="+ keyword + "&key=AIzaSyAkQGdnrTiFJLPtnA9IHXCoTlsMj1xEFqU"
+    finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword="+ keyword + "&key="+constumkey
     filename = input("Please enter your target filename in format like .xml or .json\n")
     response = urllib.request.urlretrieve(finalurl, filename)
     try:
@@ -76,7 +77,7 @@ def auto():
         locationtype = "Bus"
         location = str(glob_la[i])+','+str(glob_lo[i])
         #print(location)
-        finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=busstop"+"&key=AIzaSyAkQGdnrTiFJLPtnA9IHXCoTlsMj1xEFqU"
+        finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=busstop"+"&key="+constumkey
         #response = urllib.request.urlretrieve(finalurl, "temp.json")
         try:
             response = urllib.request.urlretrieve(finalurl, "temp.json")
@@ -85,11 +86,15 @@ def auto():
             #process the data,write into ori file then delete the tempfile.
         data = json.load(open("temp.json"))
         bus_result_num = len(data["results"])
+        if data["status"] == "OVER_QUERY_LIMIT":
+            print("Current API key reached limit of query times\n")
+            print("Please enter a new key and run this data section again.\n")
+            exit(2)
         #print("The bus station number is"+str(bus_result_num))
         result_bus[i] = bus_result_num
 
         locationtype = "Subway"
-        finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=subwaystation"+"&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
+        finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=subwaystation"+"&key="+constumkey
         response = urllib.request.urlretrieve(finalurl, "temp1.json")
         try:
             response = urllib.request.urlretrieve(finalurl, "temp1.json")
@@ -102,7 +107,6 @@ def auto():
 
 
 
-#TODO:This function needs to be modifed to be used.
 def write_out(filename,targenemt):
     with open(filename,'r') as inputf:
         with open("csvtemp1.csv",'w') as outputf:
@@ -135,8 +139,10 @@ def write_out(filename,targenemt):
 
 
 def main():
-    testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
-    response = urllib.request.urlretrieve(testurl, "temp.json")
+    #testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
+    #response = urllib.request.urlretrieve(testurl, "temp.json")
+    global constumkey
+    constumkey =input("Please enter your APIkey to start the project\n")
     mode = input("Please enter 1 for auto and 2 for manual\n")
     if int(mode) == 1:
         auto()
