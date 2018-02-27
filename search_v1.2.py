@@ -3,6 +3,7 @@ import os
 import simplejson
 import csv
 import json
+import shutil
 
 glob_la = 0
 glob_lo = 0
@@ -11,9 +12,12 @@ result_subway = 0
 sub_num = 0
 bus_num = 0
 count = 0
+resume_count = 0
 inputfilename = ''
 outputfilename= ''
 constumkey = ''
+cityname =''
+
 def manual():
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = input("Please enter 'xml' or 'json'\n")
@@ -43,8 +47,11 @@ def takecsvinput():
     global outputfilename
     global result_subway
     global result_bus
-    inputfilename=input("Please enter the input filename in .csv format\n")#get the input filename to read
-    outputfilename=input("Please enter the output filename in .csv format\n")#get the output filename to write
+    global cityname
+    inputfilename = input("Please enter the input filename in .csv format\n")#get the input filename to read
+    outputfilename = input("Please enter the output filename in .csv format\n")#get the output filename to write
+    cityname = input("Please enter the city name\n")
+
 
 
 
@@ -60,8 +67,18 @@ def takecsvinput():
             glob_la[x] = reader[x][1]
             glob_lo[x] = reader[x][2]
 
+def mkdir(path): #createing a file folder for the city if it does not exist. 
+    path = path.strip()
+    path = path.rstrip("\\")
+    isExists = os.path.exists(path)
+    if not isExists:
+        os.makedirs(path)
+        return True
+    else:
+        return False
 
-def auto():
+
+def auto(int x):
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = "json"
     radius = input("Please enter the radius of search in meters (<=50000)\n")
@@ -73,26 +90,33 @@ def auto():
     global glob_la
     #bus part readin and download part here
     takecsvinput()
-    for i in range (1,count):
+    mkdir(cityname)
+
+    for i in range (x,count):
         locationtype = "Bus"
         location = str(glob_la[i])+','+str(glob_lo[i])
-        #print(location)
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=busstop"+"&key="+constumkey
-        #response = urllib.request.urlretrieve(finalurl, "temp.json")
+        savestring = cityname+'/'+'station_'+ i +'.json' #string address to save current station data
         try:
+
             response = urllib.request.urlretrieve(finalurl, "temp.json")
+            shutil.copyfile('temp.json', savestring)
+
         except (urllib.error.URLError) as e:
+
             print("Connection timeout, please try again later\n")
-            #process the data,write into ori file then delete the tempfile.
         data = json.load(open("temp.json"))
-        bus_result_num = len(data["results"])
+        bus_result_num = len(data["results"])z
         if data["status"] == "OVER_QUERY_LIMIT":
             print("Current API key reached limit of query times\n")
             print("Please enter a new key and run this data section again.\n")
-            exit(2)
-        #print("The bus station number is"+str(bus_result_num))
+            global resume_count
+            resume_count = i
+            raise Exception('New APIkey required\n') 
+        elif data["status"] != "OK":
+        	print("Error occurrd!!!! Error code = " + data["status"])
+        	exit(2)
         result_bus[i] = bus_result_num
-
         locationtype = "Subway"
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=subwaystation"+"&key="+constumkey
         response = urllib.request.urlretrieve(finalurl, "temp1.json")
@@ -137,6 +161,9 @@ def write_out(filename,targenemt):
                 x = x+1
             writer.writerows(all)
 
+def changeKey():
+	global constumkey
+	constumkey =input("Please enter your new APIkey to start the project\n")
 
 def main():
     #testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
@@ -145,7 +172,12 @@ def main():
     constumkey =input("Please enter your APIkey to start the project\n")
     mode = input("Please enter 1 for auto and 2 for manual\n")
     if int(mode) == 1:
-        auto()
+    	try:
+    		auto(1)
+        except Exception:
+        	changeKey()
+        	auto(resume_count)
+
     elif int(mode) == 2:
         manual()
 
