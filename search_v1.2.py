@@ -48,6 +48,7 @@ def takecsvinput():
     global result_subway
     global result_bus
     global cityname
+    global station_id
     inputfilename = input("Please enter the input filename in .csv format\n")#get the input filename to read
     outputfilename = input("Please enter the output filename in .csv format\n")#get the output filename to write
     cityname = input("Please enter the city name\n")
@@ -59,6 +60,7 @@ def takecsvinput():
     initial_value = 0
     glob_la = [ initial_value for i in range(count)] #inilized the global list before using
     glob_lo = [ initial_value for i in range(count)]
+    station_id = [ initial_value for i in range(count)]
     result_bus = [ initial_value for i in range(count)]  #initilized the result list to write
     result_subway = [ initial_value for i in range(count)] #initilized the reuslt list to write
     with open(inputfilename) as f:
@@ -66,6 +68,7 @@ def takecsvinput():
         for x in range (0,count):
             glob_la[x] = reader[x][1]
             glob_lo[x] = reader[x][2]
+            station_id[x] = reader[x][0]
 
 def mkdir(path): #createing a file folder for the city if it does not exist. 
     path = path.strip()
@@ -96,7 +99,7 @@ def auto(int x):
         locationtype = "Bus"
         location = str(glob_la[i])+','+str(glob_lo[i])
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=busstop"+"&key="+constumkey
-        savestring = cityname+'/'+'station_'+ i +'.json' #string address to save current station data
+        savestring = cityname+'/'+'station_'+ station_id[i] +'.json' #string address to save current station data
         try:
 
             response = urllib.request.urlretrieve(finalurl, "temp.json")
@@ -105,8 +108,9 @@ def auto(int x):
         except (urllib.error.URLError) as e:
 
             print("Connection timeout, please try again later\n")
+
         data = json.load(open("temp.json"))
-        bus_result_num = len(data["results"])z
+        bus_result_num = len(data["results"])
         if data["status"] == "OVER_QUERY_LIMIT":
             print("Current API key reached limit of query times\n")
             print("Please enter a new key and run this data section again.\n")
@@ -115,8 +119,11 @@ def auto(int x):
             raise Exception('New APIkey required\n') 
         elif data["status"] != "OK":
         	print("Error occurrd!!!! Error code = " + data["status"])
-        	exit(2)
-        result_bus[i] = bus_result_num
+        	print("Station id is"+ station_id[i]+"\n")
+        	result_bus[i] = -1
+        if(result_bus[i] != -1):
+        	result_bus[i] = bus_result_num
+
         locationtype = "Subway"
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=subwaystation"+"&key="+constumkey
         response = urllib.request.urlretrieve(finalurl, "temp1.json")
@@ -126,6 +133,18 @@ def auto(int x):
             print("Connection timeout, please try again later\n")
         data = json.load(open("temp1.json"))
         sub_result_num = len(data["results"])
+        if data["status"] == "OVER_QUERY_LIMIT":
+            print("Current API key reached limit of query times\n")
+            print("Please enter a new key and run this data section again.\n")
+            global resume_count
+            resume_count = i
+            raise Exception('New APIkey required\n') 
+        elif data["status"] != "OK":
+        	print("Error occurrd!!!! Error code = " + data["status"])
+        	print("Station id is"+ station_id[i]+"\n")
+        	result_subway[i] = -1
+        if(result_subway[i] != -1):
+        	result_subway[i] = sub_result_num
         result_subway[i] = sub_result_num
         write_out(inputfilename,outputfilename)
 
@@ -163,7 +182,7 @@ def write_out(filename,targenemt):
 
 def changeKey():
 	global constumkey
-	constumkey =input("Please enter your new APIkey to start the project\n")
+	constumkey =input("Please enter your new APIkey to continue the project\n")
 
 def main():
     #testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
