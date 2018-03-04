@@ -17,6 +17,8 @@ inputfilename = ''
 outputfilename= ''
 constumkey = ''
 cityname =''
+scriptname = ''
+radius = 0
 
 def manual():
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
@@ -36,7 +38,7 @@ def manual():
     except (urllib.error.URLError) as e:
         print("Connection timeout, please try again later\n")
 
-def takecsvinput():
+def takecsvinput(x):
     #let user to enter the filename they want to auto process.
 	#read locations of each station in the file into global lists
 	#double check the index before deplorement
@@ -49,9 +51,29 @@ def takecsvinput():
     global result_bus
     global cityname
     global station_id
-    inputfilename = input("Please enter the input filename in .csv format\n")#get the input filename to read
-    outputfilename = input("Please enter the output filename in .csv format\n")#get the output filename to write
-    cityname = input("Please enter the city name\n")
+    global radius
+    global constumkey
+    if x == 0:
+        inputfilename = input("Please enter the input filename in .csv format\n")#get the input filename to read
+        outputfilename = input("Please enter the output filename in .csv format\n")#get the output filename to write
+        cityname = input("Please enter the city name\n")
+        radius = input("Please enter the radius of search in meters (<=50000)\n")
+        if int(radius) > 50000:
+            print("Wrong input detected\n Exiting program\n")
+            exit(1)
+        constumkey =input("Please enter your APIkey to start the project\n")
+    else:
+        file = open(scriptname,"r")
+        inputfilename = file.readline(1)
+        outputfilename = file.readline(2)
+        cityname = file.readline(3)
+        radius = file.readline(4)
+        if int(radius) > 50000:
+            print("Wrong input detected\n Exiting program\n")
+            exit(1)
+        constumkey = file.readline(5)
+    
+
 
 
 
@@ -84,16 +106,10 @@ def mkdir(path): #createing a file folder for the city if it does not exist.
 def auto(x):
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = "json"
-    radius = input("Please enter the radius of search in meters (<=50000)\n")
-    #cityname = input("Please enter the city name for your detail folder\n ")
-    if int(radius) > 50000:
-        print("Wrong input detected\n Exiting program\n")
-        exit(1)
     #change to global varibale mode to ready write-in
     global glob_lo
     global glob_la
     #bus part readin and download part here
-    takecsvinput()
     mkdir(cityname)
 
     for i in range (x,count):
@@ -184,19 +200,27 @@ def changeKey():
     global constumkey
     constumkey =input("Please enter your new APIkey to continue the project\n")
 
+def autoinput():
+    mode = input("Enter 1 for auto input\n")
+    if int(mode) == 1:
+        global scriptname
+        scriptname = input("Enter the scriptname in .txt\n")
+        takecsvinput(1)
+
+    else:
+        takecsvinput(0)
+
 def main():
     #testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
     #response = urllib.request.urlretrieve(testurl, "temp.json")
-    global constumkey
-    constumkey =input("Please enter your APIkey to start the project\n")
     mode = input("Please enter 1 for auto and 2 for manual\n")
     if int(mode) == 1:
         try:
+            autoinput()
             auto(1)
         except :
             changeKey()
             auto(resume_count)
-
     elif int(mode) == 2:
         manual()
 
