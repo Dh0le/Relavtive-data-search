@@ -37,7 +37,7 @@ def manual():
         print("Connection timeout, please try again later\n")
 
 def takecsvinput():
-	#let user to enter the filename they want to auto process.
+    #let user to enter the filename they want to auto process.
 	#read locations of each station in the file into global lists
 	#double check the index before deplorement
     global glob_la
@@ -81,10 +81,11 @@ def mkdir(path): #createing a file folder for the city if it does not exist.
         return False
 
 
-def auto(int x):
+def auto(x):
     rawurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/"
     filetype = "json"
     radius = input("Please enter the radius of search in meters (<=50000)\n")
+    #cityname = input("Please enter the city name for your detail folder\n ")
     if int(radius) > 50000:
         print("Wrong input detected\n Exiting program\n")
         exit(1)
@@ -99,9 +100,9 @@ def auto(int x):
         locationtype = "Bus"
         location = str(glob_la[i])+','+str(glob_lo[i])
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=busstop"+"&key="+constumkey
-        savestring = cityname+'/'+'station_'+ station_id[i] +'.json' #string address to save current station data
+        savestring = cityname+'/'+'station_'+ station_id[i] +'Bus'+'.json' #string address to save current station data
+        savestring1 = cityname+'/'+'station_'+ station_id[i] +"Subway"+'.json'
         try:
-
             response = urllib.request.urlretrieve(finalurl, "temp.json")
             shutil.copyfile('temp.json', savestring)
 
@@ -117,18 +118,19 @@ def auto(int x):
             global resume_count
             resume_count = i
             raise Exception('New APIkey required\n') 
-        elif data["status"] != "OK":
-        	print("Error occurrd!!!! Error code = " + data["status"])
-        	print("Station id is"+ station_id[i]+"\n")
-        	result_bus[i] = -1
+        elif data["status"] != "OK" and data["status"] != "ZERO_RESULTS":
+            print("Error occurrd!!!! Error code = " + data["status"])
+            print("Station id is "+ station_id[i]+"\n")
+            result_bus[i] = -1
         if(result_bus[i] != -1):
-        	result_bus[i] = bus_result_num
+            result_bus[i] = bus_result_num
 
         locationtype = "Subway"
         finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword=subwaystation"+"&key="+constumkey
         response = urllib.request.urlretrieve(finalurl, "temp1.json")
         try:
             response = urllib.request.urlretrieve(finalurl, "temp1.json")
+            shutil.copyfile('temp.json', savestring1)
         except (urllib.error.URLError) as e:
             print("Connection timeout, please try again later\n")
         data = json.load(open("temp1.json"))
@@ -136,16 +138,14 @@ def auto(int x):
         if data["status"] == "OVER_QUERY_LIMIT":
             print("Current API key reached limit of query times\n")
             print("Please enter a new key and run this data section again.\n")
-            global resume_count
             resume_count = i
             raise Exception('New APIkey required\n') 
-        elif data["status"] != "OK":
-        	print("Error occurrd!!!! Error code = " + data["status"])
-        	print("Station id is"+ station_id[i]+"\n")
-        	result_subway[i] = -1
+        elif data["status"] != "OK"and data["status"] != "ZERO_RESULTS":
+            print("Error occurrd!!!! Error code = " + data["status"])
+            print("Station id is"+ station_id[i]+"\n")
+            result_subway[i] = -1
         if(result_subway[i] != -1):
-        	result_subway[i] = sub_result_num
-        result_subway[i] = sub_result_num
+            result_subway[i] = sub_result_num
         write_out(inputfilename,outputfilename)
 
 
@@ -181,8 +181,8 @@ def write_out(filename,targenemt):
             writer.writerows(all)
 
 def changeKey():
-	global constumkey
-	constumkey =input("Please enter your new APIkey to continue the project\n")
+    global constumkey
+    constumkey =input("Please enter your new APIkey to continue the project\n")
 
 def main():
     #testurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=AIzaSyBCbqJ9EJcRUn_I7mMGscbOnIWUkzGxXj8"
@@ -191,11 +191,11 @@ def main():
     constumkey =input("Please enter your APIkey to start the project\n")
     mode = input("Please enter 1 for auto and 2 for manual\n")
     if int(mode) == 1:
-    	try:
-    		auto(1)
-        except Exception:
-        	changeKey()
-        	auto(resume_count)
+        try:
+            auto(1)
+        except :
+            changeKey()
+            auto(resume_count)
 
     elif int(mode) == 2:
         manual()
