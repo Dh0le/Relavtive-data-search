@@ -32,7 +32,8 @@ def manual():
     keyword = input("Please enter the keyword you want to search in places name\n")
     finalurl = rawurl + filetype + "?location=" + location + "&radius="+ radius + "&type=" + locationtype + "&keyword="+ keyword + "&key="+constumkey
     filename = input("Please enter your target filename in format like .xml or .json\n")
-    response = urllib.request.urlretrieve(finalurl, filename)
+    #response = urllib.request.urlretrieve(finalurl, filename)
+    print("Requesting URL is"+ finalurl )
     try:
         response = urllib.request.urlretrieve(finalurl, filename)
     except (urllib.error.URLError) as e:
@@ -229,6 +230,8 @@ def main():
             changeKey()
             auto(resume_count)
     elif int(mode) == 2:
+        global constumkey
+        constumkey = input("Please enter the API key to start the search\n")
         manual()
 
 main()
