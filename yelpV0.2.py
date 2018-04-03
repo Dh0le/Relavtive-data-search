@@ -22,8 +22,7 @@ import sys
 import urllib
 
 
-# This client code can run on Python 2.x or 3.x.  Your imports can be
-# simpler if you only need one of those.
+
 try:
     # For Python 3.0 and later
     from urllib.error import HTTPError
@@ -36,12 +35,8 @@ except ImportError:
     from urllib import urlencode
 
 
-# Yelp Fusion no longer uses OAuth as of December 7, 2017.
-# You no longer need to provide Client ID to fetch Data
-# It now uses private keys to authenticate requests (API Key)
-# You can find it on
-# https://www.yelp.com/developers/v3/manage_app
-API_KEY= None
+
+API_KEY= "57EBwb8evSlYVWBevjZkIk9PSD5HJU6xE9ofdNYaM5I7H49mLQr_6A6sWvnBuLlPpFyyd6pBRoNDpa41X1b9wCCWohpXl8B1ucKev2BZC2D6BI8B0agi6i-DVx2WWnYx"
 
 
 # API constants, you shouldn't have to change these.
@@ -53,7 +48,7 @@ BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 # Defaults for our simple example.
 DEFAULT_TERM = 'dinner'
 DEFAULT_LOCATION = 'San Francisco, CA'
-SEARCH_LIMIT = 3
+SEARCH_LIMIT = 50
 
 
 def request(host, path, api_key, url_params=None):
@@ -117,6 +112,10 @@ def query_api(term, location):
         location (str): The location of the business to query.
     """
     response = search(API_KEY, term, location)
+    
+    with open("test.json", "w") as fd:
+        json.dump(response,fd)
+
 
     businesses = response.get('businesses')
 
@@ -124,7 +123,7 @@ def query_api(term, location):
         print(u'No businesses for {0} in {1} found.'.format(term, location))
         return
 
-    business_id = businesses[0]['id']
+    business_id = businesses[1]['id']
 
     print(u'{0} businesses found, querying business info ' \
         'for the top result "{1}" ...'.format(
@@ -146,6 +145,9 @@ def main():
 
     input_values = parser.parse_args()
 
+    #raduis = input("Enter the raduis value\n")
+    #latitude = input("Enter the latitude\n")
+    #longtitude = input("Enter the latitude\n")
     try:
         query_api(input_values.term, input_values.location)
     except HTTPError as error:
