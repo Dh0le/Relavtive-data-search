@@ -45,27 +45,32 @@ API_KEY= "57EBwb8evSlYVWBevjZkIk9PSD5HJU6xE9ofdNYaM5I7H49mLQr_6A6sWvnBuLlPpFyyd6
 API_HOST = 'https://api.yelp.com'
 SEARCH_PATH = '/v3/businesses/search'
 BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
-
+EVENT_PATH = '/v3/events'
 sriptname = ''
 # Defaults for our simple example.
 DEFAULT_TERM = 'dinner'
 DEFAULT_LOCATION = 'San Francisco, CA'
+inputfilename = ""
+outputfilename = ""
+cityname = ""
 SEARCH_LIMIT = 50
-glob_la = 0
-glob_lo = 0
-result_rating = 0
-result_r_count = 0
-result_price = 0
-std_rating = 0
-std_price = 0
-std_r_count = 0
-price = 0
-rating = 0
-r_count = 0
-b_count = 0
+glob_la = []
+glob_lo = []
+result_rating = []
+result_r_count = []
+result_price = []
+std_rating = []
+std_price = []
+std_r_count = []
+price = []
+rating = []
+r_count = []
+b_count = []
 count = 0
 scriptname = ''
 term = ''
+result_business = []
+raidus = 0
 
 def takecsvinput():
     #let user to enter the filename they want to auto process.
@@ -89,6 +94,9 @@ def takecsvinput():
     global  result_price
     global  result_rating
     global  result_r_count
+    global term
+    global result_business
+    scriptname = input("Please enter the file name\n")
     file = open(scriptname,"r")
     inputfilename = file.readline().rstrip('\n')
     outputfilename = file.readline().rstrip('\n')
@@ -112,6 +120,7 @@ def takecsvinput():
     std_price = [ initial_value for i in range(count)]
     std_r_count = [ initial_value for i in range(count)]
     std_rating = [ initial_value for i in range(count)]
+    result_business =  [ initial_value for i in range(count)]
 
     station_id = [ initial_value for i in range(count)]
     with open(inputfilename) as f:
@@ -140,10 +149,9 @@ def request(host, path, api_key, url_params=None):
         'Authorization': 'Bearer %s' % api_key,
     }
 
-    print(u'Querying {0} ...'.format(url))
-
+    #print(u'Querying {0} ...'.format(url))
     response = requests.request('GET', url, headers=headers, params=url_params)
-
+    print(response.url)
     return response.json()
 
 
@@ -158,8 +166,10 @@ def search(api_key, term, latitude,longtidue):
 
     url_params = {
         'term': term.replace(' ', '+'),
-        'latitude': longtidue,
-        'longtitude':longtidue,
+        'location':cityname,
+        'longtitude': longtidue,
+        'latitude': latitude,
+        'radius':int(radius),
         'limit': SEARCH_LIMIT
     }
     return request(API_HOST, SEARCH_PATH, api_key, url_params=url_params)
@@ -176,6 +186,15 @@ def get_business(api_key, business_id):
 
     return request(API_HOST, business_path, api_key)
 
+def get_event(api_key):
+    url_params = {
+        'term': term.replace(' ', '+'),
+        'location':cityname,
+        'radius': int(radius),
+        'limit': SEARCH_LIMIT
+    }
+    return request(API_HOST, EVENT_PATH, api_key, url_params=url_params)
+
 
 def query_api(term,latitude,longtitude):
     """Queries the API by the input values from the user.
@@ -188,7 +207,6 @@ def query_api(term,latitude,longtitude):
     global  r_count
     global b_count
     response = search(API_KEY, term, latitude,longtitude)
-    
     with open("test.json", "w") as fd:
         json.dump(response,fd)
 
@@ -197,19 +215,30 @@ def query_api(term,latitude,longtitude):
         print(u'No businesses for {0} in {1},{2} found.'.format(term, latitude,longtitude))
         return
 
-    business_id = businesses[1]['id']
+    #business_id = businesses[1]['id']
     b_count = len(businesses)
     for x in range (0,b_count):
-        if businesses[x]['price'] == "$":
-            price[x] = 1
-        elif businesses[x]['price'] == "$$":
-            price[x] = 2
-        elif businesses[x]['price'] == "$$$":
-            price[x] = 3
-        elif businesses[x]['price'] == "$$$$":
-            price[x] = 4
-        rating[x] = businesses[x]['review']
+        try:
+            if businesses[x]["price"] == "$":
+                price[x] = 1
+               #print( price[x])
+            elif businesses[x]["price"] == "$$":
+                price[x] = 2
+                #print(price[x])
+            elif businesses[x]["price"] == "$$$":
+                price[x] = 3
+                #print(price[x])
+            elif businesses[x]['price'] == "$$$$":
+                price[x] = 4
+                #print(price[x])
+        except KeyError as error:
+            price[x] = -1
+        rating[x] = businesses[x]['rating']
+        #print("rating")
+        #print(rating[x])
         r_count[x] = businesses[x]['review_count']
+        #print("review counts")
+        #print(r_count[x])
 
 
     #print(u'{0} businesses found, querying business info ' \
@@ -220,9 +249,38 @@ def query_api(term,latitude,longtitude):
     #print(u'Result for business "{0}" found:'.format(business_id))
     #pprint.pprint(response, indent=2)
 
+def write_out(filename,targenemt):
+    with open(filename,'r') as inputf:
+        with open(targenemt,'w') as outputf:
+            writer = csv.writer(outputf,lineterminator='\n')
+            reader = csv.reader(inputf)
+            all = []
+            row = next(reader)
+            row.append("Business number")
+            row.append("Business review count average")
+            row.append("Business review count std")
+            row.append("Business price average")
+            row.append("Business price std")
+            row.append("Business rating average")
+            row.append("Business rating std")
+            all.append(row)
+            x = 1
+            for row in reader:
+                row.append(result_business[x])
+                row.append(result_r_count[x])
+                row.append(std_r_count[x])
+                row.append(result_price[x])
+                row.append(std_price[x])
+                row.append(result_rating[x])
+                row.append(std_rating[x])
+                all.append(row)
+                x = x+1
+            writer.writerows(all)
 
 def main():
-    for i in range (0,count):
+    takecsvinput()
+    #print(term)
+    for i in range (1,count):
         try:
             query_api(term,glob_la[i],glob_lo[i])
         except HTTPError as error:
@@ -233,15 +291,20 @@ def main():
                     error.read(),
                 )
             )
-        result_r_count[i] = sum(result_r_count)/float(len(b_count))
-        result_price[i] = sum(result_price) / float(len(b_count))
-        result_rating[i] = sum(result_rating)/float(len(b_count))
-        data1 = numpy.array(result_rating)
-        data2 = numpy.array(result_price)
-        data3 = numpy.array(result_r_count)
+        result_r_count[i] = sum(r_count)/float(b_count)
+        result_price[i] = sum(price) / float(b_count)
+        result_rating[i] = sum(rating)/float(b_count)
+        data1 = numpy.array(rating)
+        data2 = numpy.array(price)
+        data3 = numpy.array(r_count)
         std_price[i] = numpy.std(data2)
         std_rating[i] = numpy.std(data1)
         std_r_count[i] = numpy.std(data3)
+        result_business[i] = b_count
+    write_out(inputfilename,outputfilename)
+    event = get_event(API_KEY)
+    with open("test1.json", "w") as fd:
+        json.dump(event,fd)
 
 
 
