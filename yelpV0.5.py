@@ -21,6 +21,8 @@ import requests
 import sys
 import csv
 import numpy
+from datetime import datetime
+import time
 import urllib
 
 
@@ -52,6 +54,8 @@ DEFAULT_TERM = 'dinner'
 DEFAULT_LOCATION = 'San Francisco, CA'
 inputfilename = ""
 outputfilename = ""
+starttime = ""
+endtime = ""
 cityname = ""
 SEARCH_LIMIT = 50
 glob_la = []
@@ -96,6 +100,8 @@ def takecsvinput():
     global  result_r_count
     global term
     global result_business
+    global starttime
+    global  endtime
     scriptname = input("Please enter the file name\n")
     file = open(scriptname,"r")
     inputfilename = file.readline().rstrip('\n')
@@ -106,6 +112,8 @@ def takecsvinput():
         print("Wrong input detected\n Exiting program\n")
         exit(1)
     term = file.readline().rstrip('\n')
+    starttime = file.readline().rstrip('\n')
+    endtime = file.readline().rstrip('\n')
     constumkey = file.readline().rstrip('\n')
     count = len(open(inputfilename,'rU').readlines())#get the line number of  current open filename
     initial_value = 0
@@ -187,10 +195,20 @@ def get_business(api_key, business_id):
     return request(API_HOST, business_path, api_key)
 
 def get_event(api_key):
+    syear,smonth,sday = starttime.split("-")
+    eyear,emonth,eday = endtime.split("-")
+    start_date = datetime(year =int(syear),month=int(smonth),day=int(sday))
+    end_date = datetime(year=int(eyear),month=int(emonth),day=int(eday))
+    unix_s = time.mktime(start_date.timetuple())
+    unix_e = time.mktime(end_date.timetuple())
+    print(unix_e)
+    print(unix_s)
     url_params = {
         'term': term.replace(' ', '+'),
         'location':cityname,
         'radius': int(radius),
+        'start_date':int(unix_s),
+        'end_date':int(unix_e),
         'limit': SEARCH_LIMIT
     }
     return request(API_HOST, EVENT_PATH, api_key, url_params=url_params)
