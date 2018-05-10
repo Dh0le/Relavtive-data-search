@@ -1,0 +1,12 @@
+I ran on:
+rice-a250
+Traceback (most recent call last):
+  File "save-transfer.py", line 353, in <module>
+    main()
+  File "save-transfer.py", line 343, in main
+    los_angeles()
+  File "save-transfer.py", line 195, in los_angeles
+    write_time(csv_name,target_name)
+  File "save-transfer.py", line 101, in write_time
+    row.append('Download Time')
+UnboundLocalError: local variable 'row' referenced before assignment
